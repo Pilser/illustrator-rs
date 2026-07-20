@@ -19,6 +19,9 @@ pub mod writer;
 #[cfg(feature = "cli")]
 pub mod cli;
 
+#[cfg(feature = "handler")]
+pub mod handler;
+
 pub mod prelude {
     pub use crate::error::{Error, Result};
     #[cfg(feature = "model")]

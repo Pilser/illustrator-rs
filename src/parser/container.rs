@@ -237,6 +237,13 @@ pub fn extract_script_section(text: &str) -> String {
 
 fn decode_pgf(text: &str) -> Result<String> {
     if text.starts_with("%AI24_ZStandard_Data") {
+        #[cfg(feature = "zstd")]
+        {
+            let raw = text.as_bytes();
+            let data = &raw["%AI24_ZStandard_Data".len()..];
+            return decode_zstandard(data);
+        }
+        #[cfg(not(feature = "zstd"))]
         return Err(Error::Container(
             "Zstandard compression requires 'zstd' feature".to_string(),
         ));
@@ -250,6 +257,19 @@ fn decode_pgf(text: &str) -> Result<String> {
     }
 
     expand_ai12_compressed(text)
+}
+
+#[cfg(feature = "zstd")]
+fn decode_zstandard(data: &[u8]) -> Result<String> {
+    use std::io::Read;
+    let decoder = zstd::Decoder::new(data)
+        .map_err(|e| Error::Zstd(format!("Failed to create zstd decoder: {e}")))?;
+    let mut decompressed = Vec::new();
+    decoder
+        .take(MAX_DECOMPRESS_BYTES as u64)
+        .read_to_end(&mut decompressed)
+        .map_err(|e| Error::Zstd(format!("Zstandard decompression failed: {e}")))?;
+    Ok(String::from_utf8_lossy(&decompressed).to_string())
 }
 
 pub fn expand_ai12_compressed(text: &str) -> Result<String> {

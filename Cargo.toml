@@ -16,7 +16,7 @@ export = ["model"]
 importer = ["model", "export"]
 writer = ["model", "export", "parser"]
 cli = ["parser", "export", "importer", "writer", "dep:clap", "dep:env_logger"]
-handler = ["dep:handler-common"]
+handler = ["model", "parser", "export", "writer"]
 pdf = ["dep:lopdf"]
 zstd = ["dep:zstd"]
 
@@ -35,7 +35,7 @@ clap = { version = "4", features = ["derive"], optional = true }
 lopdf = { version = "0.34", optional = true }
 zstd = { version = "0.13", optional = true }
 env_logger = { version = "0.11", optional = true }
-handler-common = { git = "https://github.com/Pilser/OfficeCli-rust", optional = true }
+# Future: handler-common = { git = "https://github.com/Pilser/OfficeCli-rust", optional = true }
 
 [dev-dependencies]
 env_logger = "0.11"
