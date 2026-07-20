@@ -82,11 +82,10 @@ impl Lexer {
         let line = self.line;
         let col = self.col;
         let start = self.pos;
-        if let Some(ch) = self.peek() {
-            if ch == '-' || ch == '+' {
+        if let Some(ch) = self.peek()
+            && (ch == '-' || ch == '+') {
                 self.advance();
             }
-        }
         let mut has_dot = false;
         while self.pos < self.length {
             let ch = self.peek().unwrap();
@@ -186,7 +185,7 @@ impl Lexer {
             }
         }
         let hex_str: String = hex_chars.into_iter().collect();
-        let value = if hex_str.len() % 2 == 0 {
+        let value = if hex_str.len().is_multiple_of(2) {
             let bytes: Vec<u8> = hex_str
                 .as_bytes()
                 .chunks(2)
@@ -321,8 +320,8 @@ impl Lexer {
                 '%' => {
                     tokens.push(self.read_comment());
                 }
-                '-' | '+' => {
-                    if self.pos + 1 < self.length {
+                '-' | '+'
+                    if self.pos + 1 < self.length => {
                         let source = &self.source;
                         let next_start = self.pos + 1;
                         let next = source[next_start..].chars().next();
@@ -333,15 +332,12 @@ impl Lexer {
                         } else {
                             tokens.push(self.read_operator());
                         }
-                    } else {
-                        tokens.push(self.read_operator());
                     }
-                }
                 '0'..='9' => {
                     tokens.push(self.read_number());
                 }
-                '.' => {
-                    if self.pos + 1 < self.length {
+                '.'
+                    if self.pos + 1 < self.length => {
                         let source = &self.source;
                         let next_start = self.pos + 1;
                         let next = source[next_start..].chars().next();
@@ -350,10 +346,7 @@ impl Lexer {
                         } else {
                             tokens.push(self.read_operator());
                         }
-                    } else {
-                        tokens.push(self.read_operator());
                     }
-                }
                 '<' => {
                     if self.pos + 1 < self.length {
                         let source = &self.source;

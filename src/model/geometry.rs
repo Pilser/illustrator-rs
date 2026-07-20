@@ -240,19 +240,19 @@ impl Matrix {
                     };
                     result = result.concat(&m);
                 }
-                "translate" if args.len() >= 1 => {
+                "translate" if !args.is_empty() => {
                     let tx = args[0];
                     let ty = args.get(1).copied().unwrap_or(0.0);
                     let m = Matrix::translate(tx, ty);
                     result = result.concat(&m);
                 }
-                "scale" if args.len() >= 1 => {
+                "scale" if !args.is_empty() => {
                     let sx = args[0];
                     let sy = args.get(1).copied().unwrap_or(sx);
                     let m = Matrix::scale(sx, sy);
                     result = result.concat(&m);
                 }
-                "rotate" if args.len() >= 1 => {
+                "rotate" if !args.is_empty() => {
                     let angle = args[0];
                     let r = angle.to_radians();
                     let cos_r = r.cos();

@@ -1,4 +1,4 @@
 pub mod container;
 pub mod lexer;
 pub mod operators;
-pub mod parser;
+pub mod ai_parser;

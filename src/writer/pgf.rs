@@ -58,9 +58,9 @@ impl PgfWriter {
 
         self.write_trailer();
 
-        if lossless {
-            if let Some(ref meta) = self.metadata {
-                if let Some(ref prolog) = meta.prolog_data {
+        if lossless
+            && let Some(ref meta) = self.metadata
+                && let Some(ref prolog) = meta.prolog_data {
                     let le = if prolog.contains("\r\n") {
                         "\r\n"
                     } else {
@@ -68,8 +68,6 @@ impl PgfWriter {
                     };
                     return Ok(self.lines.join(le) + le);
                 }
-            }
-        }
 
         Ok(self.lines.join("\n") + "\n")
     }
@@ -344,6 +342,7 @@ impl PgfWriter {
         self.write_render_op(path.fill.is_some(), path.stroke.is_some(), path.closed);
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn write_color_state(
         &mut self,
         fill: &Option<Color>,

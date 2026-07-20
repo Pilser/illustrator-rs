@@ -203,8 +203,8 @@ impl<'a> SvgExporter<'a> {
         let fill = self.color_to_css(&compound.fill);
         parts.push(format!("fill=\"{}\"", fill));
 
-        if compound.stroke.is_some() {
-            let stroke_css = self.resolve_color(compound.stroke.as_ref().unwrap());
+        if let Some(stroke) = &compound.stroke {
+            let stroke_css = self.resolve_color(stroke);
             parts.push(format!("stroke=\"{}\"", stroke_css));
             if (compound.stroke_width - 1.0).abs() > f64::EPSILON {
                 parts.push(format!("stroke-width=\"{}\"", fmt_float(compound.stroke_width)));

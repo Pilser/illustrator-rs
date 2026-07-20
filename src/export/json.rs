@@ -22,7 +22,7 @@ pub fn export_json(document: &AiDocument) -> Result<String> {
         .iter()
         .map(|layer| {
             let objects: Vec<Value> =
-                layer.children.iter().filter_map(|obj| serialize_object(obj)).collect();
+                layer.children.iter().filter_map(serialize_object).collect();
             json!({
                 "name": layer.name,
                 "visible": layer.visible,
@@ -44,7 +44,7 @@ pub fn export_json(document: &AiDocument) -> Result<String> {
         "layers": layers,
     });
 
-    Ok(serde_json::to_string_pretty(&data).map_err(|e| Error::Export(e.to_string()))?)
+    serde_json::to_string_pretty(&data).map_err(|e| Error::Export(e.to_string()))
 }
 
 fn serialize_object(obj: &AiObject) -> Option<Value> {
@@ -52,7 +52,7 @@ fn serialize_object(obj: &AiObject) -> Option<Value> {
         AiObject::Path(p) => Some(serialize_path(p)),
         AiObject::Group(g) => {
             let children: Vec<Value> =
-                g.children.iter().filter_map(|c| serialize_object(c)).collect();
+                g.children.iter().filter_map(serialize_object).collect();
             let mut result = json!({
                 "type": "group",
                 "children": children,

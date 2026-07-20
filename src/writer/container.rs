@@ -24,11 +24,10 @@ impl ContainerBuilder {
         output_path: &Path,
         original_ai_path: Option<&Path>,
     ) -> Result<()> {
-        if let Some(orig) = original_ai_path {
-            if orig.exists() {
+        if let Some(orig) = original_ai_path
+            && orig.exists() {
                 return self.build_from_original(output_path, orig);
             }
-        }
         self.build_minimal(output_path)
     }
 
@@ -139,7 +138,7 @@ impl ContainerBuilder {
 
         pdf_bytes.extend_from_slice(b"%PDF-1.5\n");
 
-        for (_i, obj_str) in objects.iter().enumerate() {
+        for obj_str in objects.iter() {
             xref_offsets.push(pdf_bytes.len());
             pdf_bytes.extend_from_slice(obj_str.as_bytes());
             pdf_bytes.push(b'\n');

@@ -28,7 +28,7 @@ pub mod prelude {
     #[cfg(feature = "parser")]
     pub use crate::parser::lexer::{tokenize, Token, TokenType};
     #[cfg(feature = "parser")]
-    pub use crate::parser::parser::{parse_ai, AiParser};
+    pub use crate::parser::ai_parser::{parse_ai, AiParser};
     #[cfg(feature = "export")]
     pub use crate::export::json::export_json;
     #[cfg(feature = "export")]

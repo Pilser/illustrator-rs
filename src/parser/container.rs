@@ -164,16 +164,8 @@ fn decode_eps_private_data(data: &str) -> Result<String> {
 
 fn decode_ascii85(data: &str) -> Result<Vec<u8>> {
     let data = data.trim();
-    let data = if data.starts_with("<~") {
-        &data[2..]
-    } else {
-        data
-    };
-    let data = if data.ends_with("~>") {
-        &data[..data.len() - 2]
-    } else {
-        data
-    };
+    let data = data.strip_prefix("<~").unwrap_or(data);
+    let data = data.strip_suffix("~>").unwrap_or(data);
 
     let clean: String = data.chars().filter(|c| !c.is_whitespace()).collect();
     if clean.is_empty() {
@@ -210,7 +202,7 @@ fn decode_ascii85(data: &str) -> Result<Vec<u8>> {
             i += chunk_size;
 
             if chunk_size < 5 {
-                let out_count = if chunk_size > 1 { chunk_size - 1 } else { 0 };
+                let out_count = chunk_size.saturating_sub(1);
                 if out_count > 0 {
                     let be = code.to_be_bytes();
                     result.extend_from_slice(&be[..out_count]);
@@ -267,7 +259,7 @@ pub fn expand_ai12_compressed(text: &str) -> Result<String> {
     if let Some(pos) = text.find(marker) {
         let prefix = &text[..pos];
         let compressed_start = pos + marker.len();
-        let compressed_bytes = text[compressed_start..].as_bytes();
+        let compressed_bytes = &text.as_bytes()[compressed_start..];
 
         match safe_zlib_decompress(compressed_bytes, MAX_DECOMPRESS_BYTES) {
             Ok(decompressed) => {

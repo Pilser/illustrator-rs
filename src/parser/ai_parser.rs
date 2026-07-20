@@ -225,20 +225,17 @@ impl AiParser {
         while self.current_group.is_some() {
             let group = self.current_group.take();
             self.current_group = self.nesting.pop();
-            if let Some(g) = group {
-                if !g.children.is_empty() {
+            if let Some(g) = group
+                && !g.children.is_empty() {
                     self.add_object(AiObject::Group(g));
                 }
-            }
         }
 
-        if let Some(ref layer) = self.current_layer {
-            if !self.document.layers.iter().any(|l| l.name == layer.name) {
-                if !layer.children.is_empty() {
+        if let Some(ref layer) = self.current_layer
+            && !self.document.layers.iter().any(|l| l.name == layer.name)
+                && !layer.children.is_empty() {
                     self.document.layers.push(layer.clone());
                 }
-            }
-        }
 
         self.document.layers.retain(|l| l.name != "Default Layer" || !l.children.is_empty());
 
@@ -395,14 +392,13 @@ impl AiParser {
         if self.object_count > MAX_DOCUMENT_OBJECTS {
             return;
         }
-        if self.current_compound.is_some() {
-            if let AiObject::Path(p) = obj {
+        if self.current_compound.is_some()
+            && let AiObject::Path(p) = obj {
                 if let Some(ref mut cp) = self.current_compound {
                     cp.subpaths.push(p);
                 }
                 return;
             }
-        }
         if let Some(ref mut group) = self.current_group {
             group.children.push(obj);
         } else {
@@ -416,7 +412,7 @@ impl AiParser {
     fn current_point(&self) -> Point {
         for seg in self.current_segments.iter().rev() {
             if let Some(p) = seg.points.last() {
-                return p.clone();
+                return *p;
             }
         }
         Point { x: 0.0, y: 0.0 }
@@ -596,17 +592,15 @@ impl AiParser {
         let has_stroke = matches!(op, "S" | "s" | "B" | "b");
         let is_noop = matches!(op, "N" | "n");
 
-        if is_closed {
-            if let Some(last) = self.current_segments.last() {
-                if last.seg_type != SegmentType::Closepath {
+        if is_closed
+            && let Some(last) = self.current_segments.last()
+                && last.seg_type != SegmentType::Closepath {
                     self.current_segments.push(PathSegment {
                         seg_type: SegmentType::Closepath,
                         points: vec![],
                         smooth: false,
                     });
                 }
-            }
-        }
 
         let path = AiPath {
             segments: self.current_segments.clone(),
@@ -845,11 +839,10 @@ impl AiParser {
         let args: Vec<Value> = self.stack.drain(..).collect();
         self.stack.clear();
 
-        if let Some(ref layer) = self.current_layer {
-            if !self.document.layers.iter().any(|l| l.name == layer.name) {
+        if let Some(ref layer) = self.current_layer
+            && !self.document.layers.iter().any(|l| l.name == layer.name) {
                 self.document.layers.push(layer.clone());
             }
-        }
 
         let mut layer = AiLayer {
             name: "Layer".to_string(),
@@ -881,11 +874,10 @@ impl AiParser {
     }
 
     fn handle_end_layer(&mut self) {
-        if let Some(layer) = self.current_layer.take() {
-            if !self.document.layers.iter().any(|l| l.name == layer.name) {
+        if let Some(layer) = self.current_layer.take()
+            && !self.document.layers.iter().any(|l| l.name == layer.name) {
                 self.document.layers.push(layer);
             }
-        }
     }
 
     fn handle_layer_name(&mut self) {
@@ -1071,13 +1063,11 @@ impl AiParser {
     }
 
     fn handle_noop(&mut self, op_name: &str) {
-        if let Some(op_def) = get_operator(op_name) {
-            if let Some(count) = op_def.arg_count {
-                if count > 0 {
+        if let Some(op_def) = get_operator(op_name)
+            && let Some(count) = op_def.arg_count
+                && count > 0 {
                     self.pop_n(count);
                 }
-            }
-        }
     }
 
     fn handle_comment(&mut self, text: &str) {
@@ -1096,10 +1086,10 @@ impl AiParser {
         }
         if text.starts_with("%%BoundingBox:") {
             self.parse_bounding_box(text);
-        } else if text.starts_with("%%Title:") {
-            self.document.title = text[8..].trim().trim_matches(|c| c == '(' || c == ')').to_string();
-        } else if text.starts_with("%%Creator:") {
-            self.document.creator = text[10..].trim().to_string();
+        } else if let Some(title) = text.strip_prefix("%%Title:") {
+            self.document.title = title.trim().trim_matches(|c| c == '(' || c == ')').to_string();
+        } else if let Some(creator) = text.strip_prefix("%%Creator:") {
+            self.document.creator = creator.trim().to_string();
         } else if text.starts_with("%AI5_FileFormat") {
             if let Some(version_str) = text.split_whitespace().nth(1) {
                 self.document.version = format!("AI {}", version_str);
@@ -1107,8 +1097,7 @@ impl AiParser {
         } else if text.starts_with("%%CMYKCustomColor:") || text.starts_with("%%+ ") {
             self.parse_custom_color(text);
         } else if text.starts_with("%%DocumentCustomColors:") {
-        } else if text.starts_with("%%DocumentProcessColors:") {
-            let colors_part = &text[24..];
+        } else if let Some(colors_part) = text.strip_prefix("%%DocumentProcessColors:") {
             if colors_part.contains("Cyan") {
                 self.document.color_mode = "CMYK".to_string();
             } else if colors_part.contains("Red") {
@@ -1127,8 +1116,7 @@ impl AiParser {
             self.current_segments.clear();
             return;
         }
-        if text.starts_with("%AI5_FileFormat") {
-            let suffix = &text["%AI5_FileFormat".len()..];
+        if let Some(suffix) = text.strip_prefix("%AI5_FileFormat") {
             if let Some(version_str) = suffix.split_whitespace().next() {
                 self.document.version = format!("AI {}", version_str);
             }
@@ -1155,16 +1143,15 @@ impl AiParser {
             return;
         }
 
-        if text.starts_with("%_") {
-            let body = &text[2..];
+        if let Some(body) = text.strip_prefix("%_") {
             let parts: Vec<&str> = body.split_whitespace().collect();
             if parts.is_empty() {
                 return;
             }
             let op = parts[0];
             match op {
-                "Bs" | "BS" => {
-                    if parts.len() >= 7 {
+                "Bs" | "BS"
+                    if parts.len() >= 7 => {
                         let offset: f64 = parts[1].parse().unwrap_or(0.0);
                         let c: f64 = parts[3].parse().unwrap_or(0.0);
                         let m: f64 = parts[4].parse().unwrap_or(0.0);
@@ -1177,15 +1164,13 @@ impl AiParser {
                             midpoint: 0.5,
                         });
                     }
-                }
-                "Bd" => {
-                    if parts.len() >= 2 {
+                "Bd"
+                    if parts.len() >= 2 => {
                         let name = parts[1].trim_matches(|c| c == '(' || c == ')');
                         self.current_gradient_name = name.to_string();
                         self.in_gradient_def = true;
                         self.current_gradient_stops.clear();
                     }
-                }
                 "BD" => {
                     self.handle_end_gradient_def();
                 }
@@ -1211,10 +1196,10 @@ impl AiParser {
     }
 
     fn parse_custom_color(&mut self, text: &str) {
-        let body = if text.starts_with("%%CMYKCustomColor:") {
-            text[18..].trim().to_string()
-        } else if text.starts_with("%%+ ") {
-            text[4..].trim().to_string()
+        let body = if let Some(body) = text.strip_prefix("%%CMYKCustomColor:") {
+            body.trim().to_string()
+        } else if let Some(body) = text.strip_prefix("%%+ ") {
+            body.trim().to_string()
         } else {
             return;
         };
@@ -1229,30 +1214,26 @@ impl AiParser {
             let k_str = parts.next();
             let rest = parts.next().unwrap_or("");
 
-            match (c_str, m_str, y_str, k_str) {
-                (Some(cs), Some(ms), Some(ys), Some(ks)) => {
-                    let c: f64 = cs.parse().unwrap_or(0.0);
-                    let m: f64 = ms.parse().unwrap_or(0.0);
-                    let y: f64 = ys.parse().unwrap_or(0.0);
-                    let k: f64 = ks.parse().unwrap_or(0.0);
+            if let (Some(cs), Some(ms), Some(ys), Some(ks)) = (c_str, m_str, y_str, k_str) {
+                let c: f64 = cs.parse().unwrap_or(0.0);
+                let m: f64 = ms.parse().unwrap_or(0.0);
+                let y: f64 = ys.parse().unwrap_or(0.0);
+                let k: f64 = ks.parse().unwrap_or(0.0);
 
-                    if let Some(paren_start) = rest.find('(') {
-                        if let Some(paren_end) = rest[paren_start..].find(')') {
-                            let name = rest[paren_start + 1..paren_start + paren_end].to_string();
-                            let key = (
-                                (c * 1000.0) as i32,
-                                (m * 1000.0) as i32,
-                                (y * 1000.0) as i32,
-                                (k * 1000.0) as i32,
-                            );
-                            self.custom_colors.insert(key, name);
-                            let after_paren = paren_start + paren_end + 1;
-                            remaining = &rest[after_paren..];
-                            continue;
-                        }
+                if let Some(paren_start) = rest.find('(')
+                    && let Some(paren_end) = rest[paren_start..].find(')') {
+                        let name = rest[paren_start + 1..paren_start + paren_end].to_string();
+                        let key = (
+                            (c * 1000.0) as i32,
+                            (m * 1000.0) as i32,
+                            (y * 1000.0) as i32,
+                            (k * 1000.0) as i32,
+                        );
+                        self.custom_colors.insert(key, name);
+                        let after_paren = paren_start + paren_end + 1;
+                        remaining = &rest[after_paren..];
+                        continue;
                     }
-                }
-                _ => {}
             }
             break;
         }

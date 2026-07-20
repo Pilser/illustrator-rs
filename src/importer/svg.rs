@@ -103,11 +103,10 @@ fn build_svg_tree(xml: &str) -> Result<SvgElement> {
                 }
             }
             Ok(Event::Text(ref e)) => {
-                if let Ok(text) = e.unescape() {
-                    if let Some(parent) = stack.last_mut() {
+                if let Ok(text) = e.unescape()
+                    && let Some(parent) = stack.last_mut() {
                         parent.text.push_str(&text);
                     }
-                }
             }
             Ok(Event::CData(ref e)) => {
                 let text = String::from_utf8_lossy(e.as_ref());
@@ -228,15 +227,14 @@ impl SvgImporter {
             }
         }
 
-        if has_layers && !loose_elements.is_empty() {
-            if let Some(target) = doc.layers.last_mut() {
+        if has_layers && !loose_elements.is_empty()
+            && let Some(target) = doc.layers.last_mut() {
                 for child in loose_elements {
                     if let Some(obj) = self.parse_element(child, 0) {
                         target.children.push(obj);
                     }
                 }
             }
-        }
 
         if !has_layers {
             let mut default_layer = AiLayer {
@@ -267,13 +265,11 @@ impl SvgImporter {
 
     fn find_content_root<'a>(&self, root: &'a SvgElement) -> &'a SvgElement {
         for child in &root.children {
-            if child.name == "g" {
-                if let Some(transform) = child.attrs.get("transform") {
-                    if transform.contains("scale(1,-1)") || transform.contains("scale(1, -1)") {
+            if child.name == "g"
+                && let Some(transform) = child.attrs.get("transform")
+                    && (transform.contains("scale(1,-1)") || transform.contains("scale(1, -1)")) {
                         return child;
                     }
-                }
-            }
         }
         root
     }
@@ -352,15 +348,12 @@ impl SvgImporter {
         };
 
         for child in &el.children {
-            if child.name == "path" {
-                if let Some(d) = child.attrs.get("d") {
-                    if let Ok(subpaths) = parse_svg_path(d) {
-                        if let Some(sp) = subpaths.into_iter().next() {
+            if child.name == "path"
+                && let Some(d) = child.attrs.get("d")
+                    && let Ok(subpaths) = parse_svg_path(d)
+                        && let Some(sp) = subpaths.into_iter().next() {
                             self.clip_defs.insert(clip_id.clone(), sp);
                         }
-                    }
-                }
-            }
         }
     }
 
@@ -514,9 +507,9 @@ impl SvgImporter {
 
         if let Some(clip_ref) = g_el.attrs.get("clip-path") {
             let re = regex_lite::Regex::new(r"url\(#([^)]+)\)").unwrap();
-            if let Some(cap) = re.captures(clip_ref) {
-                if let Some(clip_id) = cap.get(1) {
-                    if let Some(clip_segments) = self.clip_defs.get(clip_id.as_str()) {
+            if let Some(cap) = re.captures(clip_ref)
+                && let Some(clip_id) = cap.get(1)
+                    && let Some(clip_segments) = self.clip_defs.get(clip_id.as_str()) {
                         group.clipped = true;
                         group.children.push(AiObject::Path(AiPath {
                             segments: clip_segments.clone(),
@@ -533,8 +526,6 @@ impl SvgImporter {
                             clip: true,
                         }));
                     }
-                }
-            }
         }
 
         for child in &g_el.children {
@@ -1062,8 +1053,8 @@ impl SvgImporter {
             } else {
                 hex_str.to_string()
             };
-            if expanded.len() >= 6 {
-                if let (Ok(r), Ok(g), Ok(b)) = (
+            if expanded.len() >= 6
+                && let (Ok(r), Ok(g), Ok(b)) = (
                     u8::from_str_radix(&expanded[0..2], 16),
                     u8::from_str_radix(&expanded[2..4], 16),
                     u8::from_str_radix(&expanded[4..6], 16),
@@ -1073,7 +1064,6 @@ impl SvgImporter {
                         r, g, b
                     ));
                 }
-            }
             return None;
         }
 
@@ -1098,8 +1088,8 @@ impl SvgImporter {
     fn resolve_rgb_color(&self, hex_val: &str) -> Option<Color> {
         let hex_lower = hex_val.to_lowercase();
 
-        if let Some(ref meta) = self.metadata {
-            if let Some(entry) = meta.color_hex_map.get(&hex_lower) {
+        if let Some(ref meta) = self.metadata
+            && let Some(entry) = meta.color_hex_map.get(&hex_lower) {
                 let color_type = entry.get("type").and_then(|v| v.as_str()).unwrap_or("");
                 if color_type == "spot" || entry.get("name").and_then(|v| v.as_str()).is_some() {
                     return Some(Color::Spot(SpotColor {
@@ -1127,7 +1117,6 @@ impl SvgImporter {
                     }));
                 }
             }
-        }
 
         let hex_body = hex_val.trim_start_matches('#');
         if let (Ok(r), Ok(g), Ok(b)) = (
@@ -1139,11 +1128,10 @@ impl SvgImporter {
             let gf = g as f64 / 255.0;
             let bf = b as f64 / 255.0;
 
-            if let Some(ref meta) = self.metadata {
-                if meta.color_mode == "CMYK" {
+            if let Some(ref meta) = self.metadata
+                && meta.color_mode == "CMYK" {
                     return Some(Color::Cmyk(CmykColor::from_rgb(rf, gf, bf)));
                 }
-            }
             return Some(Color::Rgb(RgbColor {
                 red: rf,
                 green: gf,
@@ -1157,8 +1145,8 @@ impl SvgImporter {
     fn collect_used_spot_colors(&self, doc: &mut AiDocument) {
         let mut seen = std::collections::HashSet::new();
         for color in doc.collect_colors() {
-            if let Color::Spot(sc) = &color {
-                if seen.insert(sc.name.clone()) {
+            if let Color::Spot(sc) = &color
+                && seen.insert(sc.name.clone()) {
                     doc.spot_colors.push(SpotColor {
                         name: sc.name.clone(),
                         cyan: sc.cyan,
@@ -1168,7 +1156,6 @@ impl SvgImporter {
                         tint: sc.tint,
                     });
                 }
-            }
         }
     }
 }

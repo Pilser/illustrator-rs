@@ -125,11 +125,7 @@ fn extract_layer_pgf(pgf_source: &str, document: &AiDocument) -> Vec<LayerPgfEnt
     let mut pos = 0;
     let mut layer_idx = 0;
 
-    loop {
-        let rel_start = match pgf_source[pos..].find("%AI5_BeginLayer") {
-            Some(s) => s,
-            None => break,
-        };
+    while let Some(rel_start) = pgf_source[pos..].find("%AI5_BeginLayer") {
         let start = pos + rel_start;
         let rel_end = match pgf_source[start..].find("%AI5_EndLayer--") {
             Some(e) => e,
